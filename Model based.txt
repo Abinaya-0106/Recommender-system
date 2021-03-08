@@ -1,0 +1,33 @@
+amazon_ratings1 = amazon_ratings.head(10000)
+ratings_utility_matrix = amazon_ratings1.pivot_table(values='Rating', index='UserId', columns='title', fill_value=0)
+ratings_utility_matrix.head()
+ratings_utility_matrix.shape
+X = ratings_utility_matrix.T
+X.head()
+X.shape
+SVD = TruncatedSVD(n_components=10)
+decomposed_matrix = SVD.fit_transform(X)
+decomposed_matrix.shape
+correlation_matrix = np.corrcoef(decomposed_matrix)
+correlation_matrix.shape
+#Isolating Product  # 'Algemarin Spa Algemarin Soap 3.2 oz bar' from the Correlation Matrix
+#Assuming the customer buys Product 'Algemarin Spa Algemarin Soap 3.2 oz bar' (randomly chosen)
+
+X.index[100]
+#index # of product  purchased by customer
+#i=Algemarin Spa Algemarin Soap 3.2 oz bar
+i="Algemarin Spa Algemarin Soap 3.2 oz bar"
+product_names = list(X.index)
+product_ID = product_names.index(i)
+product_ID
+correlation_product_ID = correlation_matrix[product_ID]
+correlation_product_ID.shape
+Recommend = list(X.index[correlation_product_ID > 0.90])
+
+# Removes the item already bought by the customer
+print("--------------------------------");
+print("Top 10 Recommeneded products :");
+print("--------------------------------");
+Recommend.remove(i) 
+
+Recommend[0:9]
