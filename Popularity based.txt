@@ -1,0 +1,19 @@
+import numpy as np
+import pandas as pd
+import sklearn
+from sklearn.decomposition import TruncatedSVD
+#part 1
+amazon_ratings = pd.read_csv(r"F:\SEM 6\IP\recommendation_dataset.csv")
+amazon_ratings = amazon_ratings.dropna()
+amazon_ratings.head()
+amazon_ratings.shape
+popular_products = pd.DataFrame(amazon_ratings.groupby(['title','ProductId'])['Rating'].count())
+
+most_popular = popular_products.sort_values('Rating', ascending=False)
+print('\n')
+print('The product suggested for you based on the most popular rating is:')
+print('\n')
+print(most_popular.head(1))
+print('\n')
+print('The products you may like:')
+print(most_popular[0:10])
