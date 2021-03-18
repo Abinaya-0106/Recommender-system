@@ -1,0 +1,57 @@
+import pandas as pd
+import numpy as np
+import ast 
+from scipy import stats
+from ast import literal_eval
+from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
+from sklearn.metrics.pairwise import linear_kernel, cosine_similarity
+from nltk.stem.snowball import SnowballStemmer
+from nltk.stem.wordnet import WordNetLemmatizer
+from nltk.corpus import wordnet
+from surprise import Reader, Dataset, SVD
+import warnings; warnings.simplefilter('ignore')
+from pandas import DataFrame
+import sklearn
+from sklearn.decomposition import TruncatedSVD
+from nltk.corpus import stopwords
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.metrics.pairwise import linear_kernel
+from surprise.model_selection import cross_validate
+from surprise.model_selection import cross_validate, train_test_split
+
+products_n = pd.read_csv("F:\SEM 6\IP\Dataset_merged2.csv")
+products_wd = products_n[products_n['description'].notnull()].copy()
+# only retain record with more than 5 characters description
+products_wd = products_n[products_n['description'].notnull()].copy()
+products_wd = products_wd[products_wd['description'].map(len) >5]
+products_wd.reset_index(drop=True, inplace=True)
+products_wd.head()
+tf = TfidfVectorizer(analyzer='word', ngram_range=(1, 3), min_df=0, stop_words='english')
+tfidf_des = tf.fit_transform(products_wd['description'])
+from sklearn.metrics.pairwise import linear_kernel
+
+# comping cosine similarity matrix using linear_kernal of sklearn
+cosine_sim_des = linear_kernel(tfidf_des, tfidf_des)
+indices_n = pd.Series(products_wd['title'])
+inddict = indices_n.to_dict()
+#changing the selection of books from index to isbn
+inddict = dict((v,k) for k,v in inddict.items())
+#euclidean distance
+from sklearn.metrics.pairwise import euclidean_distances
+D = euclidean_distances(tfidf_des)
+def recommend_euclidean_distance(title):
+    ind = inddict[title]
+    distance = list(enumerate(D[ind]))
+    distance = sorted(distance, key=lambda x: x[1])
+    distance = distance[1:50]
+    #Get the books index
+    products_index = [i[0] for i in distance]
+
+    #Return the top 5 most similar books using integar-location based indexing (iloc)
+    return products_wd.iloc[products_index]
+recommend_euclidean_distance('Mary Kay Satin Hands Hand Cream Travel MINI Size Set of 6')
+
+df=pd.DataFrame(recommend_euclidean_distance('Mary Kay Satin Hands Hand Cream Travel MINI Size Set of 6'))
+df.head(50)
+list(set(df.title))
