@@ -1,0 +1,103 @@
+#hybrid................(untitled1)
+import pandas as pd
+import numpy as np
+from surprise import Dataset, Reader
+from surprise import SVD
+from surprise import accuracy
+from surprise.model_selection import cross_validate, train_test_split
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import euclidean_distances
+
+content...........
+products_n = pd.read_csv("F:\SEM 6\IP\Dataset_merged2.csv")
+products_wd = products_n[products_n['description'].notnull()].copy()
+# only retain record with more than 5 characters description
+products_wd = products_n[products_n['description'].notnull()].copy()
+products_wd = products_wd[products_wd['description'].map(len) >5]
+products_wd.reset_index(drop=True, inplace=True)
+products_wd.head()
+tf = TfidfVectorizer(analyzer='word', ngram_range=(1, 3), min_df=0, stop_words='english')
+tfidf_des = tf.fit_transform(products_wd['description'])
+from sklearn.metrics.pairwise import linear_kernel
+
+# comping cosine similarity matrix using linear_kernal of sklearn
+
+indices_n = pd.Series(products_wd['title'])
+inddict = indices_n.to_dict()
+#changing the selection of books from index to isbn
+inddict = dict((v,k) for k,v in inddict.items())
+#euclidean distance
+from sklearn.metrics.pairwise import euclidean_distances
+D = euclidean_distances(tfidf_des)
+def recommend_euclidean_distance(title):
+    ind = inddict[title]
+    distance = list(enumerate(D[ind]))
+    distance = sorted(distance, key=lambda x: x[1])
+    distance = distance[1:50]
+    #Get the books index
+    products_index = [i[0] for i in distance]
+
+    #Return the top 5 most similar books using integar-location based indexing (iloc)
+    return products_wd.iloc[products_index]
+recommend_euclidean_distance('Mary Kay Satin Hands Hand Cream Travel MINI Size Set of 6')
+
+
+
+
+
+
+data = products_n[['UserId', 'ProductId', 'Rating']]
+#data.head()
+reader = Reader(line_format='user item rating', sep=',')
+data = Dataset.load_from_df(data, reader=reader)
+
+
+# train-test-split
+trainset, testset = train_test_split(data, test_size=.2)
+
+# instantiate SVD and fit the trainset
+svd = SVD()
+svd.fit(trainset)
+
+#products_n[products_n['UserId'] == 1]
+svd.predict(1,7535842801)
+
+# taking a look at the first 3 rows of our test set
+predictions = svd.test(testset)
+predictions[:3]
+
+
+def convert_int(x):
+    try:
+        return int(x)
+    except:
+        return np.nan
+#products_n[products_n['UserId'] == 1]
+#hybrid
+indices_map = products_n.set_index('id')
+products_n['Rating'] = products_n['Rating'].apply(convert_int)
+
+def hybrid(UserId,title):
+    ind = inddict[title]
+    distance = list(enumerate(D[ind]))
+    distance = sorted(distance, key=lambda x: x[1])
+    distance = distance[1:50]
+    #Get the books index
+    products_index = [i[0] for i in distance]
+    
+    
+    products = products_n.iloc[products_index][['title', 'description', 'Rating', 'UserId', 'id']]
+    
+    products['est'] = products['id'].apply(lambda x: svd.predict(UserId,indices_map.loc[x]['ProductId']).est)
+    products = products.sort_values('est', ascending=False)
+    return products.head(50)
+
+df=pd.DataFrame(hybrid(7535842801,'Mary Kay Satin Hands Hand Cream Travel MINI Size Set of 6'))
+
+df=df.drop_duplicates(['title'])
+
+
+df=df.drop([1])
+df[['title', 'est']]
+
+...................
